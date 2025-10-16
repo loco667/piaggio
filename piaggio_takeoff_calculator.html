@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Piaggio Takeoff Performance Calculator</title>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --panel: #121829;
+    --ink: #e6eaf2;
+    --muted: #93a0b4;
+    --accent: #5bbcff;
+    --chip: #1b2340;
+    --border: #27314f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+    color: var(--ink);
+    background: radial-gradient(1200px 800px at 80% -10%, rgba(91,188,255,0.15), transparent 60%), var(--bg);
+  }
+  header {
+    padding: 28px 24px 0;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px 0;
+    letter-spacing: 0.3px;
+  }
+  p.subtitle {
+    margin: 0 0 16px 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .container {
+    padding: 16px 24px 40px;
+    display: grid;
+    gap: 16px;
+  }
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+  }
+  .inputs { display: grid; gap: 16px; }
+  .group h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  label.radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--chip);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: border-color .2s, transform .02s ease-in;
+    user-select: none;
+  }
+  label.radio:active { transform: translateY(1px); }
+  label.radio input { display: none; }
+  label.radio[data-checked="true"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(91,188,255,0.15) inset;
+  }
+  .results {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel);
+  }
+  .card .label {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: .2px;
+  }
+  .card .value {
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .note {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  th, td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    text-align: left;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: .2px;
+  }
+  .footer {
+    margin-top: 8px;
+  }
+  .stack { display: grid; gap: 10px; }
+  @media (max-width: 900px) {
+    .results { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .results { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Piaggio Takeoff Performance Calculator</h1>
+    <p class="subtitle">Select <strong>Temperature (°C)</strong>, <strong>Altitude (ft)</strong>, and <strong>Weight (lb)</strong>. Distances are shown in meters with feet in parentheses. SE climb shown in fpm.</p>
+  </header>
+
+  <main class="container">
+    <section class="panel inputs">
+      <div class="group">
+        <h3>Altitude (ft)</h3>
+        <div id="alt-group" class="chips"></div>
+      </div>
+      <div class="group">
+        <h3>Temperature (°C)</h3>
+        <div id="temp-group" class="chips"></div>
+        <div class="note">Temperature options update based on altitude. If no table exists for a selection (e.g., 40&nbsp;°C at 8000&nbsp;ft), results display <b>N/A</b>.</div>
+      </div>
+      <div class="group">
+        <h3>Weight (lb)</h3>
+        <div id="weight-group" class="chips"></div>
+      </div>
+    </section>
+
+    <section class="panel stack">
+      <div class="results">
+        <div class="card">
+          <div class="label">Takeoff distance</div>
+          <div class="value" id="out-tod">—</div>
+        </div>
+        <div class="card">
+          <div class="label">Accelerate / Stop</div>
+          <div class="value" id="out-accstop">—</div>
+        </div>
+        <div class="card">
+          <div class="label">Accelerate / Go</div>
+          <div class="value" id="out-accgo">—</div>
+        </div>
+        <div class="card">
+          <div class="label">SE climb</div>
+          <div class="value" id="out-seclimb">—</div>
+        </div>
+      </div>
+      <div class="note">Data source: uploaded performance tables. Distances are converted from feet to meters (1 ft = 0.3048 m). Where a table cell is blank, the calculator displays <b>N/A</b>.</div>
+    </section>
+
+    <section class="panel footer">
+      <h3>Vr and V50 (static)</h3>
+      <table id="vrv50-table">
+        <thead><tr><th>Mass (lb)</th><th>Vr (KIAS)</th><th>V50 (KIAS)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+<script>
+  const DATA = {"0":{"50":{"12100":{"to_dist_ft":4400,"acc_stop_ft":6600,"acc_go_ft":null,"se_climb_fpm":500},"11600":{"to_dist_ft":4000,"acc_stop_ft":5650,"acc_go_ft":10300,"se_climb_fpm":600},"11550":{"to_dist_ft":3900,"acc_stop_ft":5200,"acc_go_ft":8000,"se_climb_fpm":600},"11000":{"to_dist_ft":3700,"acc_stop_ft":4800,"acc_go_ft":6600,"se_climb_fpm":675},"10500":{"to_dist_ft":3500,"acc_stop_ft":4600,"acc_go_ft":5800,"se_climb_fpm":750},"10000":{"to_dist_ft":3300,"acc_stop_ft":4500,"acc_go_ft":5200,"se_climb_fpm":850}},"40":{"12100":{"to_dist_ft":3750,"acc_stop_ft":6300,"acc_go_ft":7350,"se_climb_fpm":600},"11600":{"to_dist_ft":3400,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":700},"11550":{"to_dist_ft":3300,"acc_stop_ft":4750,"acc_go_ft":6000,"se_climb_fpm":700},"11000":{"to_dist_ft":3150,"acc_stop_ft":4400,"acc_go_ft":5000,"se_climb_fpm":750},"10500":{"to_dist_ft":2950,"acc_stop_ft":4300,"acc_go_ft":4400,"se_climb_fpm":825},"10000":{"to_dist_ft":2800,"acc_stop_ft":4200,"acc_go_ft":4000,"se_climb_fpm":950}},"30":{"12100":{"to_dist_ft":3500,"acc_stop_ft":6100,"acc_go_ft":6400,"se_climb_fpm":625},"11600":{"to_dist_ft":3150,"acc_stop_ft":5150,"acc_go_ft":5750,"se_climb_fpm":725},"11550":{"to_dist_ft":3150,"acc_stop_ft":4550,"acc_go_ft":5750,"se_climb_fpm":725},"11000":{"to_dist_ft":2950,"acc_stop_ft":4250,"acc_go_ft":4800,"se_climb_fpm":825},"10500":{"to_dist_ft":2800,"acc_stop_ft":4100,"acc_go_ft":4100,"se_climb_fpm":900},"10000":{"to_dist_ft":2650,"acc_stop_ft":3950,"acc_go_ft":3750,"se_climb_fpm":975}},"20":{"12100":{"to_dist_ft":3300,"acc_stop_ft":5800,"acc_go_ft":5500,"se_climb_fpm":650},"11600":{"to_dist_ft":2950,"acc_stop_ft":5000,"acc_go_ft":5400,"se_climb_fpm":750},"11550":{"to_dist_ft":2950,"acc_stop_ft":4300,"acc_go_ft":5400,"se_climb_fpm":750},"11000":{"to_dist_ft":2800,"acc_stop_ft":4050,"acc_go_ft":4550,"se_climb_fpm":850},"10500":{"to_dist_ft":2650,"acc_stop_ft":3850,"acc_go_ft":3900,"se_climb_fpm":925},"10000":{"to_dist_ft":2500,"acc_stop_ft":3750,"acc_go_ft":3600,"se_climb_fpm":1000}},"10":{"12100":{"to_dist_ft":3100,"acc_stop_ft":5650,"acc_go_ft":5200,"se_climb_fpm":675},"11600":{"to_dist_ft":2800,"acc_stop_ft":4850,"acc_go_ft":4800,"se_climb_fpm":775},"11550":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":4800,"se_climb_fpm":775},"11000":{"to_dist_ft":2600,"acc_stop_ft":3850,"acc_go_ft":4100,"se_climb_fpm":875},"10500":{"to_dist_ft":2500,"acc_stop_ft":3700,"acc_go_ft":3750,"se_climb_fpm":950},"10000":{"to_dist_ft":2350,"acc_stop_ft":3650,"acc_go_ft":3400,"se_climb_fpm":1025}},"0":{"12100":{"to_dist_ft":2850,"acc_stop_ft":5400,"acc_go_ft":5000,"se_climb_fpm":700},"11600":{"to_dist_ft":2600,"acc_stop_ft":4650,"acc_go_ft":4600,"se_climb_fpm":775},"11550":{"to_dist_ft":2600,"acc_stop_ft":3950,"acc_go_ft":4600,"se_climb_fpm":775},"11000":{"to_dist_ft":2450,"acc_stop_ft":3750,"acc_go_ft":3900,"se_climb_fpm":875},"10500":{"to_dist_ft":2350,"acc_stop_ft":3600,"acc_go_ft":3500,"se_climb_fpm":950},"10000":{"to_dist_ft":2200,"acc_stop_ft":3550,"acc_go_ft":3200,"se_climb_fpm":1025}},"-10":{"12100":{"to_dist_ft":120,"acc_stop_ft":126,"acc_go_ft":null,"se_climb_fpm":null},"11600":{"to_dist_ft":2500,"acc_stop_ft":4500,"acc_go_ft":4500,"se_climb_fpm":800},"11550":{"to_dist_ft":2450,"acc_stop_ft":3800,"acc_go_ft":4500,"se_climb_fpm":900},"11000":{"to_dist_ft":2300,"acc_stop_ft":3600,"acc_go_ft":3600,"se_climb_fpm":900},"10500":{"to_dist_ft":2200,"acc_stop_ft":3400,"acc_go_ft":3300,"se_climb_fpm":975},"10000":{"to_dist_ft":2050,"acc_stop_ft":3300,"acc_go_ft":3000,"se_climb_fpm":1050}}},"2000":{"40":{"12100":{"to_dist_ft":4450,"acc_stop_ft":6800,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":3950,"acc_stop_ft":5850,"acc_go_ft":8400,"se_climb_fpm":600},"11550":{"to_dist_ft":3800,"acc_stop_ft":5600,"acc_go_ft":7400,"se_climb_fpm":600},"11000":{"to_dist_ft":3600,"acc_stop_ft":4800,"acc_go_ft":5900,"se_climb_fpm":675},"10500":{"to_dist_ft":3400,"acc_stop_ft":4700,"acc_go_ft":5300,"se_climb_fpm":750},"10000":{"to_dist_ft":3200,"acc_stop_ft":4600,"acc_go_ft":4100,"se_climb_fpm":850}},"30":{"12100":{"to_dist_ft":3900,"acc_stop_ft":6600,"acc_go_ft":8100,"se_climb_fpm":625},"11600":{"to_dist_ft":3650,"acc_stop_ft":5600,"acc_go_ft":6800,"se_climb_fpm":675},"11550":{"to_dist_ft":3550,"acc_stop_ft":5100,"acc_go_ft":6400,"se_climb_fpm":657},"11000":{"to_dist_ft":3350,"acc_stop_ft":4700,"acc_go_ft":5600,"se_climb_fpm":800},"10500":{"to_dist_ft":3150,"acc_stop_ft":4500,"acc_go_ft":5000,"se_climb_fpm":850},"10000":{"to_dist_ft":3000,"acc_stop_ft":4350,"acc_go_ft":3800,"se_climb_fpm":950}},"20":{"12100":{"to_dist_ft":3700,"acc_stop_ft":6300,"acc_go_ft":7450,"se_climb_fpm":650},"11600":{"to_dist_ft":3400,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":700},"11550":{"to_dist_ft":3350,"acc_stop_ft":4800,"acc_go_ft":6000,"se_climb_fpm":700},"11000":{"to_dist_ft":3150,"acc_stop_ft":4500,"acc_go_ft":5200,"se_climb_fpm":825},"10500":{"to_dist_ft":3000,"acc_stop_ft":4250,"acc_go_ft":4600,"se_climb_fpm":875},"10000":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":3600,"se_climb_fpm":975}},"10":{"12100":{"to_dist_ft":3500,"acc_stop_ft":6100,"acc_go_ft":6500,"se_climb_fpm":675},"11600":{"to_dist_ft":3200,"acc_stop_ft":5200,"acc_go_ft":5600,"se_climb_fpm":725},"11550":{"to_dist_ft":3150,"acc_stop_ft":4600,"acc_go_ft":5600,"se_climb_fpm":725},"11000":{"to_dist_ft":3000,"acc_stop_ft":4300,"acc_go_ft":4800,"se_climb_fpm":850},"10500":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":4150,"se_climb_fpm":900},"10000":{"to_dist_ft":2650,"acc_stop_ft":4050,"acc_go_ft":3400,"se_climb_fpm":1000}},"0":{"12100":{"to_dist_ft":3250,"acc_stop_ft":5850,"acc_go_ft":5500,"se_climb_fpm":700},"11600":{"to_dist_ft":3000,"acc_stop_ft":5000,"acc_go_ft":5250,"se_climb_fpm":750},"11550":{"to_dist_ft":2950,"acc_stop_ft":4400,"acc_go_ft":5250,"se_climb_fpm":750},"11000":{"to_dist_ft":2800,"acc_stop_ft":4100,"acc_go_ft":4300,"se_climb_fpm":875},"10500":{"to_dist_ft":2650,"acc_stop_ft":3950,"acc_go_ft":3900,"se_climb_fpm":925},"10000":{"to_dist_ft":2500,"acc_stop_ft":3850,"acc_go_ft":3200,"se_climb_fpm":1025}},"-10":{"12100":{"to_dist_ft":3000,"acc_stop_ft":5650,"acc_go_ft":5100,"se_climb_fpm":725},"11600":{"to_dist_ft":2850,"acc_stop_ft":4850,"acc_go_ft":5000,"se_climb_fpm":775},"11550":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":5000,"se_climb_fpm":775},"11000":{"to_dist_ft":2600,"acc_stop_ft":4000,"acc_go_ft":4150,"se_climb_fpm":900},"10500":{"to_dist_ft":2500,"acc_stop_ft":3800,"acc_go_ft":3800,"se_climb_fpm":950},"10000":{"to_dist_ft":2350,"acc_stop_ft":3700,"acc_go_ft":3000,"se_climb_fpm":1050}}},"4000":{"40":{"12100":{"to_dist_ft":5400,"acc_stop_ft":7400,"acc_go_ft":null,"se_climb_fpm":450},"11600":{"to_dist_ft":4800,"acc_stop_ft":6400,"acc_go_ft":null,"se_climb_fpm":500},"11550":{"to_dist_ft":4700,"acc_stop_ft":6200,"acc_go_ft":10400,"se_climb_fpm":500},"11000":{"to_dist_ft":4450,"acc_stop_ft":5800,"acc_go_ft":8400,"se_climb_fpm":575},"10500":{"to_dist_ft":4200,"acc_stop_ft":5450,"acc_go_ft":7200,"se_climb_fpm":650},"10000":{"to_dist_ft":3950,"acc_stop_ft":5300,"acc_go_ft":6400,"se_climb_fpm":750}},"30":{"12100":{"to_dist_ft":4600,"acc_stop_ft":7150,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":4150,"acc_stop_ft":6050,"acc_go_ft":7950,"se_climb_fpm":600},"11550":{"to_dist_ft":4050,"acc_stop_ft":5550,"acc_go_ft":7750,"se_climb_fpm":600},"11000":{"to_dist_ft":3800,"acc_stop_ft":5150,"acc_go_ft":6300,"se_climb_fpm":675},"10500":{"to_dist_ft":3600,"acc_stop_ft":4950,"acc_go_ft":5500,"se_climb_fpm":750},"10000":{"to_dist_ft":3400,"acc_stop_ft":4750,"acc_go_ft":5000,"se_climb_fpm":850}},"20":{"12100":{"to_dist_ft":4200,"acc_stop_ft":6800,"acc_go_ft":null,"se_climb_fpm":575},"11600":{"to_dist_ft":3850,"acc_stop_ft":5750,"acc_go_ft":7400,"se_climb_fpm":650},"11550":{"to_dist_ft":3800,"acc_stop_ft":5300,"acc_go_ft":7400,"se_climb_fpm":650},"11000":{"to_dist_ft":3600,"acc_stop_ft":4950,"acc_go_ft":5900,"se_climb_fpm":775},"10500":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":5250,"se_climb_fpm":850},"10000":{"to_dist_ft":3200,"acc_stop_ft":4650,"acc_go_ft":4800,"se_climb_fpm":925}},"10":{"12100":{"to_dist_ft":3900,"acc_stop_ft":6600,"acc_go_ft":8000,"se_climb_fpm":600},"11600":{"to_dist_ft":3650,"acc_stop_ft":5600,"acc_go_ft":6600,"se_climb_fpm":675},"11550":{"to_dist_ft":3600,"acc_stop_ft":5050,"acc_go_ft":6600,"se_climb_fpm":675},"11000":{"to_dist_ft":3400,"acc_stop_ft":4700,"acc_go_ft":5500,"se_climb_fpm":800},"10500":{"to_dist_ft":3200,"acc_stop_ft":4550,"acc_go_ft":4900,"se_climb_fpm":875},"10000":{"to_dist_ft":3000,"acc_stop_ft":4400,"acc_go_ft":4400,"se_climb_fpm":950}},"0":{"12100":{"to_dist_ft":3650,"acc_stop_ft":6300,"acc_go_ft":6400,"se_climb_fpm":625},"11600":{"to_dist_ft":3400,"acc_stop_ft":5350,"acc_go_ft":6300,"se_climb_fpm":700},"11550":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":6300,"se_climb_fpm":700},"11000":{"to_dist_ft":3200,"acc_stop_ft":4500,"acc_go_ft":5250,"se_climb_fpm":825},"10500":{"to_dist_ft":3000,"acc_stop_ft":4350,"acc_go_ft":4600,"se_climb_fpm":925},"10000":{"to_dist_ft":2850,"acc_stop_ft":4250,"acc_go_ft":4200,"se_climb_fpm":975}},"-20":{"12100":{"to_dist_ft":3300,"acc_stop_ft":5950,"acc_go_ft":5900,"se_climb_fpm":675},"11600":{"to_dist_ft":2950,"acc_stop_ft":5250,"acc_go_ft":5100,"se_climb_fpm":750},"11550":{"to_dist_ft":2900,"acc_stop_ft":4450,"acc_go_ft":5100,"se_climb_fpm":750},"11000":{"to_dist_ft":2750,"acc_stop_ft":4150,"acc_go_ft":4500,"se_climb_fpm":875},"10500":{"to_dist_ft":2600,"acc_stop_ft":4100,"acc_go_ft":4400,"se_climb_fpm":975},"10000":{"to_dist_ft":2500,"acc_stop_ft":4000,"acc_go_ft":3600,"se_climb_fpm":1025}}},"8000":{"30":{"12100":{"to_dist_ft":6550,"acc_stop_ft":8400,"acc_go_ft":null,"se_climb_fpm":375},"11600":{"to_dist_ft":5900,"acc_stop_ft":7300,"acc_go_ft":null,"se_climb_fpm":400},"11550":{"to_dist_ft":5850,"acc_stop_ft":7200,"acc_go_ft":null,"se_climb_fpm":400},"11000":{"to_dist_ft":5500,"acc_stop_ft":6650,"acc_go_ft":11600,"se_climb_fpm":475},"10500":{"to_dist_ft":5150,"acc_stop_ft":6300,"acc_go_ft":9900,"se_climb_fpm":550},"10000":{"to_dist_ft":4850,"acc_stop_ft":6100,"acc_go_ft":8800,"se_climb_fpm":650}},"20":{"12100":{"to_dist_ft":5800,"acc_stop_ft":8050,"acc_go_ft":null,"se_climb_fpm":525},"11600":{"to_dist_ft":5150,"acc_stop_ft":6850,"acc_go_ft":null,"se_climb_fpm":550},"11550":{"to_dist_ft":4950,"acc_stop_ft":6500,"acc_go_ft":10800,"se_climb_fpm":550},"11000":{"to_dist_ft":4650,"acc_stop_ft":6050,"acc_go_ft":8700,"se_climb_fpm":625},"10500":{"to_dist_ft":4350,"acc_stop_ft":5800,"acc_go_ft":7200,"se_climb_fpm":700},"10000":{"to_dist_ft":4100,"acc_stop_ft":5600,"acc_go_ft":6500,"se_climb_fpm":775}},"10":{"12100":{"to_dist_ft":5250,"acc_stop_ft":7750,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":4750,"acc_stop_ft":6650,"acc_go_ft":10300,"se_climb_fpm":600},"11550":{"to_dist_ft":4650,"acc_stop_ft":6250,"acc_go_ft":9900,"se_climb_fpm":600},"11000":{"to_dist_ft":4400,"acc_stop_ft":5800,"acc_go_ft":7800,"se_climb_fpm":675},"10500":{"to_dist_ft":4150,"acc_stop_ft":5550,"acc_go_ft":6600,"se_climb_fpm":750},"10000":{"to_dist_ft":3900,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":850}},"0":{"12100":{"to_dist_ft":4900,"acc_stop_ft":7450,"acc_go_ft":null,"se_climb_fpm":575},"11600":{"to_dist_ft":4450,"acc_stop_ft":6400,"acc_go_ft":8850,"se_climb_fpm":625},"11550":{"to_dist_ft":4400,"acc_stop_ft":5900,"acc_go_ft":8800,"se_climb_fpm":625},"11000":{"to_dist_ft":4150,"acc_stop_ft":5550,"acc_go_ft":7000,"se_climb_fpm":700},"10500":{"to_dist_ft":3900,"acc_stop_ft":5250,"acc_go_ft":6100,"se_climb_fpm":800},"10000":{"to_dist_ft":3650,"acc_stop_ft":5150,"acc_go_ft":5600,"se_climb_fpm":900}},"-10":{"12100":{"to_dist_ft":4550,"acc_stop_ft":7150,"acc_go_ft":11800,"se_climb_fpm":600},"11600":{"to_dist_ft":4150,"acc_stop_ft":6200,"acc_go_ft":8050,"se_climb_fpm":650},"11550":{"to_dist_ft":4100,"acc_stop_ft":5600,"acc_go_ft":8000,"se_climb_fpm":650},"11000":{"to_dist_ft":3850,"acc_stop_ft":5250,"acc_go_ft":6250,"se_climb_fpm":725},"10500":{"to_dist_ft":3650,"acc_stop_ft":5000,"acc_go_ft":5750,"se_climb_fpm":825},"10000":{"to_dist_ft":3450,"acc_stop_ft":4900,"acc_go_ft":5250,"se_climb_fpm":925}},"-20":{"12100":{"to_dist_ft":4200,"acc_stop_ft":6850,"acc_go_ft":9400,"se_climb_fpm":600},"11600":{"to_dist_ft":3850,"acc_stop_ft":5850,"acc_go_ft":7300,"se_climb_fpm":675},"11550":{"to_dist_ft":3800,"acc_stop_ft":5350,"acc_go_ft":7300,"se_climb_fpm":675},"11000":{"to_dist_ft":3550,"acc_stop_ft":5000,"acc_go_ft":5700,"se_climb_fpm":750},"10500":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":5600,"se_climb_fpm":850},"10000":{"to_dist_ft":3200,"acc_stop_ft":4700,"acc_go_ft":4900,"se_climb_fpm":950}}}};
+  const VRV50 = [{"mass_text":"> 10810","min_lb":10811,"max_lb":null,"vr":103,"v50":120},{"mass_text":"10811 - 11550","min_lb":10811,"max_lb":11550,"vr":106,"v50":120},{"mass_text":"11551 - 11699","min_lb":11551,"max_lb":11699,"vr":112,"v50":122},{"mass_text":"11700 11899","min_lb":11700,"max_lb":11899,"vr":114,"v50":123},{"mass_text":"11900 12099","min_lb":11900,"max_lb":12099,"vr":117,"v50":125},{"mass_text":"12100","min_lb":12100,"max_lb":12100,"vr":120,"v50":126}];
+
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  function feetToMeters(ft) { return Math.round(ft * 0.3048); }
+  function fmtInt(n) { return n.toLocaleString(); }
+
+  function fmtDistance(ft) { 
+    if (ft === null || ft === undefined) return "N/A";
+    const m = feetToMeters(ft);
+    return `${fmtInt(m)} m (${fmtInt(ft)} ft)`;
+  }
+  function fmtFpm(v) {
+    if (v === null || v === undefined) return "N/A";
+    return `${fmtInt(v)} fpm`;
+  }
+
+  function renderRadioGroup(containerId, name, options, format, onChange, initialValue) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = "";
+    options.forEach((opt, idx) => {
+      const id = `${name}-${opt}`.replace(/[^a-z0-9\\-]/gi, "_");
+      const label = document.createElement("label");
+      label.className = "radio";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = name;
+      input.value = opt;
+      input.id = id;
+      if ((initialValue !== undefined && initialValue === opt) || (initialValue === undefined && idx === 0)) {
+        input.checked = true;
+        label.dataset.checked = "true";
+      }
+      input.addEventListener("change", () => {
+        $$( `label.radio`).forEach(l => { if(l.control && l.control.name===name) l.dataset.checked="false"; });
+        label.dataset.checked = input.checked ? "true" : "false";
+        onChange(opt);
+      });
+      const span = document.createElement("span");
+      span.textContent = format ? format(opt) : String(opt);
+      label.appendChild(input);
+      label.appendChild(span);
+      el.appendChild(label);
+    });
+  }
+
+  function availableTempsForAlt(alt) {
+    const temps = Object.keys(DATA[alt] || {}).map(Number);
+    temps.sort((a,b) => a-b);
+    return temps;
+  }
+
+  function availableWeights() {
+    const anyAlt = Object.keys(DATA)[0];
+    const weights = Object.keys(DATA[anyAlt]).map(t => Object.keys(DATA[anyAlt][t])).flat().map(Number);
+    const uniq = Array.from(new Set(weights));
+    uniq.sort((a,b) => b-a);
+    return uniq;
+  }
+
+  function getSelected(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? (isNaN(+el.value) ? el.value : +el.value) : null;
+  }
+
+  function recompute() {
+    const alt = getSelected("alt");
+    const temp = getSelected("temp");
+    const weight = getSelected("weight");
+    const hasAlt = Object.prototype.hasOwnProperty.call(DATA, alt);
+    const hasTemp = hasAlt && Object.prototype.hasOwnProperty.call(DATA[alt], temp);
+    const hasWeight = hasTemp && Object.prototype.hasOwnProperty.call(DATA[alt][temp], weight);
+
+    let out = { to_dist_ft: null, acc_stop_ft: null, acc_go_ft: null, se_climb_fpm: null };
+    if (hasWeight) {
+      out = DATA[alt][temp][weight];
+    }
+
+    $("#out-tod").textContent = fmtDistance(out.to_dist_ft);
+    $("#out-accstop").textContent = fmtDistance(out.acc_stop_ft);
+    $("#out-accgo").textContent = fmtDistance(out.acc_go_ft);
+    $("#out-seclimb").textContent = fmtFpm(out.se_climb_fpm);
+  }
+
+  function renderAll() {
+    const altOptions = Object.keys(DATA).map(Number).sort((a,b) => a-b);
+    renderRadioGroup("alt-group", "alt", altOptions, v => (v===0 ? "Sea Level (0 ft)" : `${v.toLocaleString()} ft`), (alt) => {
+      const temps = availableTempsForAlt(alt);
+      const defaultTemp = temps.includes(20) ? 20 : temps[0];
+      renderRadioGroup("temp-group", "temp", temps, v => `${v} °C`, () => { recompute(); }, defaultTemp);
+      recompute();
+    });
+
+    const alt = getSelected("alt");
+    const temps = availableTempsForAlt(alt);
+    const defaultTemp = temps.includes(20) ? 20 : temps[0];
+    renderRadioGroup("temp-group", "temp", temps, v => `${v} °C`, () => { recompute(); }, defaultTemp);
+
+    const wts = availableWeights();
+    renderRadioGroup("weight-group", "weight", wts, v => `${v.toLocaleString()} lb`, () => { recompute(); });
+
+    recompute();
+
+    const tbody = document.querySelector("#vrv50-table tbody");
+    tbody.innerHTML = "";
+    VRV50.forEach(row => {
+      const tr = document.createElement("tr");
+      const tdMass = document.createElement("td");
+      tdMass.textContent = row.mass_text;
+      const tdVr = document.createElement("td");
+      tdVr.textContent = (row.vr ?? "—");
+      const tdV50 = document.createElement("td");
+      tdV50.textContent = (row.v50 ?? "—");
+      tr.appendChild(tdMass);
+      tr.appendChild(tdVr);
+      tr.appendChild(tdV50);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", renderAll);
+</script>
+</body>
+</html>
