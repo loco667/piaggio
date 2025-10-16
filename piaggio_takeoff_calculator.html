@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Piaggio Takeoff Performance Calculator</title>
+<title>Piaggio Avanti II EVO Takeoff Performance Calculator</title>
 <style>
   :root {
     --bg: #0b0f19;
@@ -137,8 +137,8 @@
 </head>
 <body>
   <header>
-    <h1>Piaggio Takeoff Performance Calculator</h1>
-    <p class="subtitle">Select <strong>Temperature (°C)</strong>, <strong>Altitude (ft)</strong>, and <strong>Weight (lb)</strong>. Distances are shown in meters with feet in parentheses. SE climb shown in fpm.</p>
+    <h1>Piaggio Avanti II EVO Takeoff Performance Calculator</h1>
+    <p class="subtitle">Based on the training-ony checklist, which was based on AFM version A7. Release 1.0 Mar 2017</p>
   </header>
 
   <main class="container">
@@ -150,7 +150,6 @@
       <div class="group">
         <h3>Temperature (°C)</h3>
         <div id="temp-group" class="chips"></div>
-        <div class="note">Temperature options update based on altitude. If no table exists for a selection (e.g., 40&nbsp;°C at 8000&nbsp;ft), results display <b>N/A</b>.</div>
       </div>
       <div class="group">
         <h3>Weight (lb)</h3>
@@ -161,7 +160,7 @@
     <section class="panel stack">
       <div class="results">
         <div class="card">
-          <div class="label">Takeoff distance</div>
+          <div class="label">Takeoff distance over 50ft</div>
           <div class="value" id="out-tod">—</div>
         </div>
         <div class="card">
@@ -169,19 +168,19 @@
           <div class="value" id="out-accstop">—</div>
         </div>
         <div class="card">
-          <div class="label">Accelerate / Go</div>
+          <div class="label">Accelerate / Go distance over 50ft</div>
           <div class="value" id="out-accgo">—</div>
         </div>
         <div class="card">
-          <div class="label">SE climb</div>
+          <div class="label">SE climb rate</div>
           <div class="value" id="out-seclimb">—</div>
         </div>
       </div>
-      <div class="note">Data source: uploaded performance tables. Distances are converted from feet to meters (1 ft = 0.3048 m). Where a table cell is blank, the calculator displays <b>N/A</b>.</div>
+     
     </section>
 
     <section class="panel footer">
-      <h3>Vr and V50 (static)</h3>
+      <h3>Vr and V50</h3>
       <table id="vrv50-table">
         <thead><tr><th>Mass (lb)</th><th>Vr (KIAS)</th><th>V50 (KIAS)</th></tr></thead>
         <tbody></tbody>
@@ -190,8 +189,967 @@
   </main>
 
 <script>
-  const DATA = {"0":{"50":{"12100":{"to_dist_ft":4400,"acc_stop_ft":6600,"acc_go_ft":null,"se_climb_fpm":500},"11600":{"to_dist_ft":4000,"acc_stop_ft":5650,"acc_go_ft":10300,"se_climb_fpm":600},"11550":{"to_dist_ft":3900,"acc_stop_ft":5200,"acc_go_ft":8000,"se_climb_fpm":600},"11000":{"to_dist_ft":3700,"acc_stop_ft":4800,"acc_go_ft":6600,"se_climb_fpm":675},"10500":{"to_dist_ft":3500,"acc_stop_ft":4600,"acc_go_ft":5800,"se_climb_fpm":750},"10000":{"to_dist_ft":3300,"acc_stop_ft":4500,"acc_go_ft":5200,"se_climb_fpm":850}},"40":{"12100":{"to_dist_ft":3750,"acc_stop_ft":6300,"acc_go_ft":7350,"se_climb_fpm":600},"11600":{"to_dist_ft":3400,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":700},"11550":{"to_dist_ft":3300,"acc_stop_ft":4750,"acc_go_ft":6000,"se_climb_fpm":700},"11000":{"to_dist_ft":3150,"acc_stop_ft":4400,"acc_go_ft":5000,"se_climb_fpm":750},"10500":{"to_dist_ft":2950,"acc_stop_ft":4300,"acc_go_ft":4400,"se_climb_fpm":825},"10000":{"to_dist_ft":2800,"acc_stop_ft":4200,"acc_go_ft":4000,"se_climb_fpm":950}},"30":{"12100":{"to_dist_ft":3500,"acc_stop_ft":6100,"acc_go_ft":6400,"se_climb_fpm":625},"11600":{"to_dist_ft":3150,"acc_stop_ft":5150,"acc_go_ft":5750,"se_climb_fpm":725},"11550":{"to_dist_ft":3150,"acc_stop_ft":4550,"acc_go_ft":5750,"se_climb_fpm":725},"11000":{"to_dist_ft":2950,"acc_stop_ft":4250,"acc_go_ft":4800,"se_climb_fpm":825},"10500":{"to_dist_ft":2800,"acc_stop_ft":4100,"acc_go_ft":4100,"se_climb_fpm":900},"10000":{"to_dist_ft":2650,"acc_stop_ft":3950,"acc_go_ft":3750,"se_climb_fpm":975}},"20":{"12100":{"to_dist_ft":3300,"acc_stop_ft":5800,"acc_go_ft":5500,"se_climb_fpm":650},"11600":{"to_dist_ft":2950,"acc_stop_ft":5000,"acc_go_ft":5400,"se_climb_fpm":750},"11550":{"to_dist_ft":2950,"acc_stop_ft":4300,"acc_go_ft":5400,"se_climb_fpm":750},"11000":{"to_dist_ft":2800,"acc_stop_ft":4050,"acc_go_ft":4550,"se_climb_fpm":850},"10500":{"to_dist_ft":2650,"acc_stop_ft":3850,"acc_go_ft":3900,"se_climb_fpm":925},"10000":{"to_dist_ft":2500,"acc_stop_ft":3750,"acc_go_ft":3600,"se_climb_fpm":1000}},"10":{"12100":{"to_dist_ft":3100,"acc_stop_ft":5650,"acc_go_ft":5200,"se_climb_fpm":675},"11600":{"to_dist_ft":2800,"acc_stop_ft":4850,"acc_go_ft":4800,"se_climb_fpm":775},"11550":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":4800,"se_climb_fpm":775},"11000":{"to_dist_ft":2600,"acc_stop_ft":3850,"acc_go_ft":4100,"se_climb_fpm":875},"10500":{"to_dist_ft":2500,"acc_stop_ft":3700,"acc_go_ft":3750,"se_climb_fpm":950},"10000":{"to_dist_ft":2350,"acc_stop_ft":3650,"acc_go_ft":3400,"se_climb_fpm":1025}},"0":{"12100":{"to_dist_ft":2850,"acc_stop_ft":5400,"acc_go_ft":5000,"se_climb_fpm":700},"11600":{"to_dist_ft":2600,"acc_stop_ft":4650,"acc_go_ft":4600,"se_climb_fpm":775},"11550":{"to_dist_ft":2600,"acc_stop_ft":3950,"acc_go_ft":4600,"se_climb_fpm":775},"11000":{"to_dist_ft":2450,"acc_stop_ft":3750,"acc_go_ft":3900,"se_climb_fpm":875},"10500":{"to_dist_ft":2350,"acc_stop_ft":3600,"acc_go_ft":3500,"se_climb_fpm":950},"10000":{"to_dist_ft":2200,"acc_stop_ft":3550,"acc_go_ft":3200,"se_climb_fpm":1025}},"-10":{"12100":{"to_dist_ft":120,"acc_stop_ft":126,"acc_go_ft":null,"se_climb_fpm":null},"11600":{"to_dist_ft":2500,"acc_stop_ft":4500,"acc_go_ft":4500,"se_climb_fpm":800},"11550":{"to_dist_ft":2450,"acc_stop_ft":3800,"acc_go_ft":4500,"se_climb_fpm":900},"11000":{"to_dist_ft":2300,"acc_stop_ft":3600,"acc_go_ft":3600,"se_climb_fpm":900},"10500":{"to_dist_ft":2200,"acc_stop_ft":3400,"acc_go_ft":3300,"se_climb_fpm":975},"10000":{"to_dist_ft":2050,"acc_stop_ft":3300,"acc_go_ft":3000,"se_climb_fpm":1050}}},"2000":{"40":{"12100":{"to_dist_ft":4450,"acc_stop_ft":6800,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":3950,"acc_stop_ft":5850,"acc_go_ft":8400,"se_climb_fpm":600},"11550":{"to_dist_ft":3800,"acc_stop_ft":5600,"acc_go_ft":7400,"se_climb_fpm":600},"11000":{"to_dist_ft":3600,"acc_stop_ft":4800,"acc_go_ft":5900,"se_climb_fpm":675},"10500":{"to_dist_ft":3400,"acc_stop_ft":4700,"acc_go_ft":5300,"se_climb_fpm":750},"10000":{"to_dist_ft":3200,"acc_stop_ft":4600,"acc_go_ft":4100,"se_climb_fpm":850}},"30":{"12100":{"to_dist_ft":3900,"acc_stop_ft":6600,"acc_go_ft":8100,"se_climb_fpm":625},"11600":{"to_dist_ft":3650,"acc_stop_ft":5600,"acc_go_ft":6800,"se_climb_fpm":675},"11550":{"to_dist_ft":3550,"acc_stop_ft":5100,"acc_go_ft":6400,"se_climb_fpm":657},"11000":{"to_dist_ft":3350,"acc_stop_ft":4700,"acc_go_ft":5600,"se_climb_fpm":800},"10500":{"to_dist_ft":3150,"acc_stop_ft":4500,"acc_go_ft":5000,"se_climb_fpm":850},"10000":{"to_dist_ft":3000,"acc_stop_ft":4350,"acc_go_ft":3800,"se_climb_fpm":950}},"20":{"12100":{"to_dist_ft":3700,"acc_stop_ft":6300,"acc_go_ft":7450,"se_climb_fpm":650},"11600":{"to_dist_ft":3400,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":700},"11550":{"to_dist_ft":3350,"acc_stop_ft":4800,"acc_go_ft":6000,"se_climb_fpm":700},"11000":{"to_dist_ft":3150,"acc_stop_ft":4500,"acc_go_ft":5200,"se_climb_fpm":825},"10500":{"to_dist_ft":3000,"acc_stop_ft":4250,"acc_go_ft":4600,"se_climb_fpm":875},"10000":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":3600,"se_climb_fpm":975}},"10":{"12100":{"to_dist_ft":3500,"acc_stop_ft":6100,"acc_go_ft":6500,"se_climb_fpm":675},"11600":{"to_dist_ft":3200,"acc_stop_ft":5200,"acc_go_ft":5600,"se_climb_fpm":725},"11550":{"to_dist_ft":3150,"acc_stop_ft":4600,"acc_go_ft":5600,"se_climb_fpm":725},"11000":{"to_dist_ft":3000,"acc_stop_ft":4300,"acc_go_ft":4800,"se_climb_fpm":850},"10500":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":4150,"se_climb_fpm":900},"10000":{"to_dist_ft":2650,"acc_stop_ft":4050,"acc_go_ft":3400,"se_climb_fpm":1000}},"0":{"12100":{"to_dist_ft":3250,"acc_stop_ft":5850,"acc_go_ft":5500,"se_climb_fpm":700},"11600":{"to_dist_ft":3000,"acc_stop_ft":5000,"acc_go_ft":5250,"se_climb_fpm":750},"11550":{"to_dist_ft":2950,"acc_stop_ft":4400,"acc_go_ft":5250,"se_climb_fpm":750},"11000":{"to_dist_ft":2800,"acc_stop_ft":4100,"acc_go_ft":4300,"se_climb_fpm":875},"10500":{"to_dist_ft":2650,"acc_stop_ft":3950,"acc_go_ft":3900,"se_climb_fpm":925},"10000":{"to_dist_ft":2500,"acc_stop_ft":3850,"acc_go_ft":3200,"se_climb_fpm":1025}},"-10":{"12100":{"to_dist_ft":3000,"acc_stop_ft":5650,"acc_go_ft":5100,"se_climb_fpm":725},"11600":{"to_dist_ft":2850,"acc_stop_ft":4850,"acc_go_ft":5000,"se_climb_fpm":775},"11550":{"to_dist_ft":2800,"acc_stop_ft":4150,"acc_go_ft":5000,"se_climb_fpm":775},"11000":{"to_dist_ft":2600,"acc_stop_ft":4000,"acc_go_ft":4150,"se_climb_fpm":900},"10500":{"to_dist_ft":2500,"acc_stop_ft":3800,"acc_go_ft":3800,"se_climb_fpm":950},"10000":{"to_dist_ft":2350,"acc_stop_ft":3700,"acc_go_ft":3000,"se_climb_fpm":1050}}},"4000":{"40":{"12100":{"to_dist_ft":5400,"acc_stop_ft":7400,"acc_go_ft":null,"se_climb_fpm":450},"11600":{"to_dist_ft":4800,"acc_stop_ft":6400,"acc_go_ft":null,"se_climb_fpm":500},"11550":{"to_dist_ft":4700,"acc_stop_ft":6200,"acc_go_ft":10400,"se_climb_fpm":500},"11000":{"to_dist_ft":4450,"acc_stop_ft":5800,"acc_go_ft":8400,"se_climb_fpm":575},"10500":{"to_dist_ft":4200,"acc_stop_ft":5450,"acc_go_ft":7200,"se_climb_fpm":650},"10000":{"to_dist_ft":3950,"acc_stop_ft":5300,"acc_go_ft":6400,"se_climb_fpm":750}},"30":{"12100":{"to_dist_ft":4600,"acc_stop_ft":7150,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":4150,"acc_stop_ft":6050,"acc_go_ft":7950,"se_climb_fpm":600},"11550":{"to_dist_ft":4050,"acc_stop_ft":5550,"acc_go_ft":7750,"se_climb_fpm":600},"11000":{"to_dist_ft":3800,"acc_stop_ft":5150,"acc_go_ft":6300,"se_climb_fpm":675},"10500":{"to_dist_ft":3600,"acc_stop_ft":4950,"acc_go_ft":5500,"se_climb_fpm":750},"10000":{"to_dist_ft":3400,"acc_stop_ft":4750,"acc_go_ft":5000,"se_climb_fpm":850}},"20":{"12100":{"to_dist_ft":4200,"acc_stop_ft":6800,"acc_go_ft":null,"se_climb_fpm":575},"11600":{"to_dist_ft":3850,"acc_stop_ft":5750,"acc_go_ft":7400,"se_climb_fpm":650},"11550":{"to_dist_ft":3800,"acc_stop_ft":5300,"acc_go_ft":7400,"se_climb_fpm":650},"11000":{"to_dist_ft":3600,"acc_stop_ft":4950,"acc_go_ft":5900,"se_climb_fpm":775},"10500":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":5250,"se_climb_fpm":850},"10000":{"to_dist_ft":3200,"acc_stop_ft":4650,"acc_go_ft":4800,"se_climb_fpm":925}},"10":{"12100":{"to_dist_ft":3900,"acc_stop_ft":6600,"acc_go_ft":8000,"se_climb_fpm":600},"11600":{"to_dist_ft":3650,"acc_stop_ft":5600,"acc_go_ft":6600,"se_climb_fpm":675},"11550":{"to_dist_ft":3600,"acc_stop_ft":5050,"acc_go_ft":6600,"se_climb_fpm":675},"11000":{"to_dist_ft":3400,"acc_stop_ft":4700,"acc_go_ft":5500,"se_climb_fpm":800},"10500":{"to_dist_ft":3200,"acc_stop_ft":4550,"acc_go_ft":4900,"se_climb_fpm":875},"10000":{"to_dist_ft":3000,"acc_stop_ft":4400,"acc_go_ft":4400,"se_climb_fpm":950}},"0":{"12100":{"to_dist_ft":3650,"acc_stop_ft":6300,"acc_go_ft":6400,"se_climb_fpm":625},"11600":{"to_dist_ft":3400,"acc_stop_ft":5350,"acc_go_ft":6300,"se_climb_fpm":700},"11550":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":6300,"se_climb_fpm":700},"11000":{"to_dist_ft":3200,"acc_stop_ft":4500,"acc_go_ft":5250,"se_climb_fpm":825},"10500":{"to_dist_ft":3000,"acc_stop_ft":4350,"acc_go_ft":4600,"se_climb_fpm":925},"10000":{"to_dist_ft":2850,"acc_stop_ft":4250,"acc_go_ft":4200,"se_climb_fpm":975}},"-20":{"12100":{"to_dist_ft":3300,"acc_stop_ft":5950,"acc_go_ft":5900,"se_climb_fpm":675},"11600":{"to_dist_ft":2950,"acc_stop_ft":5250,"acc_go_ft":5100,"se_climb_fpm":750},"11550":{"to_dist_ft":2900,"acc_stop_ft":4450,"acc_go_ft":5100,"se_climb_fpm":750},"11000":{"to_dist_ft":2750,"acc_stop_ft":4150,"acc_go_ft":4500,"se_climb_fpm":875},"10500":{"to_dist_ft":2600,"acc_stop_ft":4100,"acc_go_ft":4400,"se_climb_fpm":975},"10000":{"to_dist_ft":2500,"acc_stop_ft":4000,"acc_go_ft":3600,"se_climb_fpm":1025}}},"8000":{"30":{"12100":{"to_dist_ft":6550,"acc_stop_ft":8400,"acc_go_ft":null,"se_climb_fpm":375},"11600":{"to_dist_ft":5900,"acc_stop_ft":7300,"acc_go_ft":null,"se_climb_fpm":400},"11550":{"to_dist_ft":5850,"acc_stop_ft":7200,"acc_go_ft":null,"se_climb_fpm":400},"11000":{"to_dist_ft":5500,"acc_stop_ft":6650,"acc_go_ft":11600,"se_climb_fpm":475},"10500":{"to_dist_ft":5150,"acc_stop_ft":6300,"acc_go_ft":9900,"se_climb_fpm":550},"10000":{"to_dist_ft":4850,"acc_stop_ft":6100,"acc_go_ft":8800,"se_climb_fpm":650}},"20":{"12100":{"to_dist_ft":5800,"acc_stop_ft":8050,"acc_go_ft":null,"se_climb_fpm":525},"11600":{"to_dist_ft":5150,"acc_stop_ft":6850,"acc_go_ft":null,"se_climb_fpm":550},"11550":{"to_dist_ft":4950,"acc_stop_ft":6500,"acc_go_ft":10800,"se_climb_fpm":550},"11000":{"to_dist_ft":4650,"acc_stop_ft":6050,"acc_go_ft":8700,"se_climb_fpm":625},"10500":{"to_dist_ft":4350,"acc_stop_ft":5800,"acc_go_ft":7200,"se_climb_fpm":700},"10000":{"to_dist_ft":4100,"acc_stop_ft":5600,"acc_go_ft":6500,"se_climb_fpm":775}},"10":{"12100":{"to_dist_ft":5250,"acc_stop_ft":7750,"acc_go_ft":null,"se_climb_fpm":550},"11600":{"to_dist_ft":4750,"acc_stop_ft":6650,"acc_go_ft":10300,"se_climb_fpm":600},"11550":{"to_dist_ft":4650,"acc_stop_ft":6250,"acc_go_ft":9900,"se_climb_fpm":600},"11000":{"to_dist_ft":4400,"acc_stop_ft":5800,"acc_go_ft":7800,"se_climb_fpm":675},"10500":{"to_dist_ft":4150,"acc_stop_ft":5550,"acc_go_ft":6600,"se_climb_fpm":750},"10000":{"to_dist_ft":3900,"acc_stop_ft":5400,"acc_go_ft":6000,"se_climb_fpm":850}},"0":{"12100":{"to_dist_ft":4900,"acc_stop_ft":7450,"acc_go_ft":null,"se_climb_fpm":575},"11600":{"to_dist_ft":4450,"acc_stop_ft":6400,"acc_go_ft":8850,"se_climb_fpm":625},"11550":{"to_dist_ft":4400,"acc_stop_ft":5900,"acc_go_ft":8800,"se_climb_fpm":625},"11000":{"to_dist_ft":4150,"acc_stop_ft":5550,"acc_go_ft":7000,"se_climb_fpm":700},"10500":{"to_dist_ft":3900,"acc_stop_ft":5250,"acc_go_ft":6100,"se_climb_fpm":800},"10000":{"to_dist_ft":3650,"acc_stop_ft":5150,"acc_go_ft":5600,"se_climb_fpm":900}},"-10":{"12100":{"to_dist_ft":4550,"acc_stop_ft":7150,"acc_go_ft":11800,"se_climb_fpm":600},"11600":{"to_dist_ft":4150,"acc_stop_ft":6200,"acc_go_ft":8050,"se_climb_fpm":650},"11550":{"to_dist_ft":4100,"acc_stop_ft":5600,"acc_go_ft":8000,"se_climb_fpm":650},"11000":{"to_dist_ft":3850,"acc_stop_ft":5250,"acc_go_ft":6250,"se_climb_fpm":725},"10500":{"to_dist_ft":3650,"acc_stop_ft":5000,"acc_go_ft":5750,"se_climb_fpm":825},"10000":{"to_dist_ft":3450,"acc_stop_ft":4900,"acc_go_ft":5250,"se_climb_fpm":925}},"-20":{"12100":{"to_dist_ft":4200,"acc_stop_ft":6850,"acc_go_ft":9400,"se_climb_fpm":600},"11600":{"to_dist_ft":3850,"acc_stop_ft":5850,"acc_go_ft":7300,"se_climb_fpm":675},"11550":{"to_dist_ft":3800,"acc_stop_ft":5350,"acc_go_ft":7300,"se_climb_fpm":675},"11000":{"to_dist_ft":3550,"acc_stop_ft":5000,"acc_go_ft":5700,"se_climb_fpm":750},"10500":{"to_dist_ft":3400,"acc_stop_ft":4800,"acc_go_ft":5600,"se_climb_fpm":850},"10000":{"to_dist_ft":3200,"acc_stop_ft":4700,"acc_go_ft":4900,"se_climb_fpm":950}}}};
-  const VRV50 = [{"mass_text":"> 10810","min_lb":10811,"max_lb":null,"vr":103,"v50":120},{"mass_text":"10811 - 11550","min_lb":10811,"max_lb":11550,"vr":106,"v50":120},{"mass_text":"11551 - 11699","min_lb":11551,"max_lb":11699,"vr":112,"v50":122},{"mass_text":"11700 11899","min_lb":11700,"max_lb":11899,"vr":114,"v50":123},{"mass_text":"11900 12099","min_lb":11900,"max_lb":12099,"vr":117,"v50":125},{"mass_text":"12100","min_lb":12100,"max_lb":12100,"vr":120,"v50":126}];
+  const DATA = {
+  "0": {
+    "0": {
+      "10000": {
+        "to_dist_ft": 2200,
+        "acc_stop_ft": 3550,
+        "acc_go_ft": 3200,
+        "se_climb_fpm": 1025
+      },
+      "10500": {
+        "to_dist_ft": 2350,
+        "acc_stop_ft": 3600,
+        "acc_go_ft": 3500,
+        "se_climb_fpm": 950
+      },
+      "11000": {
+        "to_dist_ft": 2450,
+        "acc_stop_ft": 3750,
+        "acc_go_ft": 3900,
+        "se_climb_fpm": 875
+      },
+      "11550": {
+        "to_dist_ft": 2600,
+        "acc_stop_ft": 3950,
+        "acc_go_ft": 4600,
+        "se_climb_fpm": 775
+      },
+      "11600": {
+        "to_dist_ft": 2600,
+        "acc_stop_ft": 4650,
+        "acc_go_ft": 4600,
+        "se_climb_fpm": 775
+      },
+      "12100": {
+        "to_dist_ft": 2850,
+        "acc_stop_ft": 5400,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 700
+      }
+    },
+    "10": {
+      "10000": {
+        "to_dist_ft": 2350,
+        "acc_stop_ft": 3650,
+        "acc_go_ft": 3400,
+        "se_climb_fpm": 1025
+      },
+      "10500": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 3700,
+        "acc_go_ft": 3750,
+        "se_climb_fpm": 950
+      },
+      "11000": {
+        "to_dist_ft": 2600,
+        "acc_stop_ft": 3850,
+        "acc_go_ft": 4100,
+        "se_climb_fpm": 875
+      },
+      "11550": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4150,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 775
+      },
+      "11600": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4850,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 775
+      },
+      "12100": {
+        "to_dist_ft": 3100,
+        "acc_stop_ft": 5650,
+        "acc_go_ft": 5200,
+        "se_climb_fpm": 675
+      }
+    },
+    "20": {
+      "10000": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 3750,
+        "acc_go_ft": 3600,
+        "se_climb_fpm": 1000
+      },
+      "10500": {
+        "to_dist_ft": 2650,
+        "acc_stop_ft": 3850,
+        "acc_go_ft": 3900,
+        "se_climb_fpm": 925
+      },
+      "11000": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4050,
+        "acc_go_ft": 4550,
+        "se_climb_fpm": 850
+      },
+      "11550": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 4300,
+        "acc_go_ft": 5400,
+        "se_climb_fpm": 750
+      },
+      "11600": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 5000,
+        "acc_go_ft": 5400,
+        "se_climb_fpm": 750
+      },
+      "12100": {
+        "to_dist_ft": 3300,
+        "acc_stop_ft": 5800,
+        "acc_go_ft": 5500,
+        "se_climb_fpm": 650
+      }
+    },
+    "30": {
+      "10000": {
+        "to_dist_ft": 2650,
+        "acc_stop_ft": 3950,
+        "acc_go_ft": 3750,
+        "se_climb_fpm": 975
+      },
+      "10500": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4100,
+        "acc_go_ft": 4100,
+        "se_climb_fpm": 900
+      },
+      "11000": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 4250,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 825
+      },
+      "11550": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 4550,
+        "acc_go_ft": 5750,
+        "se_climb_fpm": 725
+      },
+      "11600": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 5150,
+        "acc_go_ft": 5750,
+        "se_climb_fpm": 725
+      },
+      "12100": {
+        "to_dist_ft": 3500,
+        "acc_stop_ft": 6100,
+        "acc_go_ft": 6400,
+        "se_climb_fpm": 625
+      }
+    },
+    "40": {
+      "10000": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4200,
+        "acc_go_ft": 4000,
+        "se_climb_fpm": 950
+      },
+      "10500": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 4300,
+        "acc_go_ft": 4400,
+        "se_climb_fpm": 825
+      },
+      "11000": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 4400,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 750
+      },
+      "11550": {
+        "to_dist_ft": 3300,
+        "acc_stop_ft": 4750,
+        "acc_go_ft": 6000,
+        "se_climb_fpm": 700
+      },
+      "11600": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 5400,
+        "acc_go_ft": 6000,
+        "se_climb_fpm": 700
+      },
+      "12100": {
+        "to_dist_ft": 3750,
+        "acc_stop_ft": 6300,
+        "acc_go_ft": 7350,
+        "se_climb_fpm": 600
+      }
+    },
+    "50": {
+      "10000": {
+        "to_dist_ft": 3300,
+        "acc_stop_ft": 4500,
+        "acc_go_ft": 5200,
+        "se_climb_fpm": 850
+      },
+      "10500": {
+        "to_dist_ft": 3500,
+        "acc_stop_ft": 4600,
+        "acc_go_ft": 5800,
+        "se_climb_fpm": 750
+      },
+      "11000": {
+        "to_dist_ft": 3700,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 6600,
+        "se_climb_fpm": 675
+      },
+      "11550": {
+        "to_dist_ft": 3900,
+        "acc_stop_ft": 5200,
+        "acc_go_ft": 8000,
+        "se_climb_fpm": 600
+      },
+      "11600": {
+        "to_dist_ft": 4000,
+        "acc_stop_ft": 5650,
+        "acc_go_ft": 10300,
+        "se_climb_fpm": 600
+      },
+      "12100": {
+        "to_dist_ft": 4400,
+        "acc_stop_ft": 6600,
+        "acc_go_ft": null,
+        "se_climb_fpm": 500
+      }
+    },
+    "-10": {
+      "10000": {
+        "to_dist_ft": 2050,
+        "acc_stop_ft": 3300,
+        "acc_go_ft": 3000,
+        "se_climb_fpm": 1050
+      },
+      "10500": {
+        "to_dist_ft": 2200,
+        "acc_stop_ft": 3400,
+        "acc_go_ft": 3300,
+        "se_climb_fpm": 975
+      },
+      "11000": {
+        "to_dist_ft": 2300,
+        "acc_stop_ft": 3600,
+        "acc_go_ft": 3600,
+        "se_climb_fpm": 900
+      },
+      "11550": {
+        "to_dist_ft": 2450,
+        "acc_stop_ft": 3800,
+        "acc_go_ft": 4500,
+        "se_climb_fpm": 900
+      },
+      "11600": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 4500,
+        "acc_go_ft": 4500,
+        "se_climb_fpm": 800
+      },
+      "12100": {
+        "to_dist_ft": 2700,
+        "acc_stop_ft": 5200,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 725
+      }
+    }
+  },
+  "2000": {
+    "0": {
+      "10000": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 3850,
+        "acc_go_ft": 3200,
+        "se_climb_fpm": 1025
+      },
+      "10500": {
+        "to_dist_ft": 2650,
+        "acc_stop_ft": 3950,
+        "acc_go_ft": 3900,
+        "se_climb_fpm": 925
+      },
+      "11000": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4100,
+        "acc_go_ft": 4300,
+        "se_climb_fpm": 875
+      },
+      "11550": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 4400,
+        "acc_go_ft": 5250,
+        "se_climb_fpm": 750
+      },
+      "11600": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 5000,
+        "acc_go_ft": 5250,
+        "se_climb_fpm": 750
+      },
+      "12100": {
+        "to_dist_ft": 3250,
+        "acc_stop_ft": 5850,
+        "acc_go_ft": 5500,
+        "se_climb_fpm": 700
+      }
+    },
+    "10": {
+      "10000": {
+        "to_dist_ft": 2650,
+        "acc_stop_ft": 4050,
+        "acc_go_ft": 3400,
+        "se_climb_fpm": 1000
+      },
+      "10500": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4150,
+        "acc_go_ft": 4150,
+        "se_climb_fpm": 900
+      },
+      "11000": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 4300,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 850
+      },
+      "11550": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 4600,
+        "acc_go_ft": 5600,
+        "se_climb_fpm": 725
+      },
+      "11600": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 5200,
+        "acc_go_ft": 5600,
+        "se_climb_fpm": 725
+      },
+      "12100": {
+        "to_dist_ft": 3500,
+        "acc_stop_ft": 6100,
+        "acc_go_ft": 6500,
+        "se_climb_fpm": 675
+      }
+    },
+    "20": {
+      "10000": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4150,
+        "acc_go_ft": 3600,
+        "se_climb_fpm": 975
+      },
+      "10500": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 4250,
+        "acc_go_ft": 4600,
+        "se_climb_fpm": 875
+      },
+      "11000": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 4500,
+        "acc_go_ft": 5200,
+        "se_climb_fpm": 825
+      },
+      "11550": {
+        "to_dist_ft": 3350,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 6000,
+        "se_climb_fpm": 700
+      },
+      "11600": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 5400,
+        "acc_go_ft": 6000,
+        "se_climb_fpm": 700
+      },
+      "12100": {
+        "to_dist_ft": 3700,
+        "acc_stop_ft": 6300,
+        "acc_go_ft": 7450,
+        "se_climb_fpm": 650
+      }
+    },
+    "30": {
+      "10000": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 4350,
+        "acc_go_ft": 3800,
+        "se_climb_fpm": 950
+      },
+      "10500": {
+        "to_dist_ft": 3150,
+        "acc_stop_ft": 4500,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 850
+      },
+      "11000": {
+        "to_dist_ft": 3350,
+        "acc_stop_ft": 4700,
+        "acc_go_ft": 5600,
+        "se_climb_fpm": 800
+      },
+      "11550": {
+        "to_dist_ft": 3550,
+        "acc_stop_ft": 5100,
+        "acc_go_ft": 6400,
+        "se_climb_fpm": 657
+      },
+      "11600": {
+        "to_dist_ft": 3650,
+        "acc_stop_ft": 5600,
+        "acc_go_ft": 6800,
+        "se_climb_fpm": 675
+      },
+      "12100": {
+        "to_dist_ft": 3900,
+        "acc_stop_ft": 6600,
+        "acc_go_ft": 8100,
+        "se_climb_fpm": 625
+      }
+    },
+    "40": {
+      "10000": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 4600,
+        "acc_go_ft": 4100,
+        "se_climb_fpm": 850
+      },
+      "10500": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4700,
+        "acc_go_ft": 5300,
+        "se_climb_fpm": 750
+      },
+      "11000": {
+        "to_dist_ft": 3600,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 5900,
+        "se_climb_fpm": 675
+      },
+      "11550": {
+        "to_dist_ft": 3800,
+        "acc_stop_ft": 5600,
+        "acc_go_ft": 7400,
+        "se_climb_fpm": 600
+      },
+      "11600": {
+        "to_dist_ft": 3950,
+        "acc_stop_ft": 5850,
+        "acc_go_ft": 8400,
+        "se_climb_fpm": 600
+      },
+      "12100": {
+        "to_dist_ft": 4450,
+        "acc_stop_ft": 6800,
+        "acc_go_ft": null,
+        "se_climb_fpm": 550
+      }
+    },
+    "-10": {
+      "10000": {
+        "to_dist_ft": 2350,
+        "acc_stop_ft": 3700,
+        "acc_go_ft": 3000,
+        "se_climb_fpm": 1050
+      },
+      "10500": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 3800,
+        "acc_go_ft": 3800,
+        "se_climb_fpm": 950
+      },
+      "11000": {
+        "to_dist_ft": 2600,
+        "acc_stop_ft": 4000,
+        "acc_go_ft": 4150,
+        "se_climb_fpm": 900
+      },
+      "11550": {
+        "to_dist_ft": 2800,
+        "acc_stop_ft": 4150,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 775
+      },
+      "11600": {
+        "to_dist_ft": 2850,
+        "acc_stop_ft": 4850,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 775
+      },
+      "12100": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 5650,
+        "acc_go_ft": 5100,
+        "se_climb_fpm": 725
+      }
+    }
+  },
+  "4000": {
+    "0": {
+      "10000": {
+        "to_dist_ft": 2850,
+        "acc_stop_ft": 4250,
+        "acc_go_ft": 4200,
+        "se_climb_fpm": 975
+      },
+      "10500": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 4350,
+        "acc_go_ft": 4600,
+        "se_climb_fpm": 925
+      },
+      "11000": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 4500,
+        "acc_go_ft": 5250,
+        "se_climb_fpm": 825
+      },
+      "11550": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 6300,
+        "se_climb_fpm": 700
+      },
+      "11600": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 5350,
+        "acc_go_ft": 6300,
+        "se_climb_fpm": 700
+      },
+      "12100": {
+        "to_dist_ft": 3650,
+        "acc_stop_ft": 6300,
+        "acc_go_ft": 6400,
+        "se_climb_fpm": 625
+      }
+    },
+    "10": {
+      "10000": {
+        "to_dist_ft": 3000,
+        "acc_stop_ft": 4400,
+        "acc_go_ft": 4400,
+        "se_climb_fpm": 950
+      },
+      "10500": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 4550,
+        "acc_go_ft": 4900,
+        "se_climb_fpm": 875
+      },
+      "11000": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4700,
+        "acc_go_ft": 5500,
+        "se_climb_fpm": 800
+      },
+      "11550": {
+        "to_dist_ft": 3600,
+        "acc_stop_ft": 5050,
+        "acc_go_ft": 6600,
+        "se_climb_fpm": 675
+      },
+      "11600": {
+        "to_dist_ft": 3650,
+        "acc_stop_ft": 5600,
+        "acc_go_ft": 6600,
+        "se_climb_fpm": 675
+      },
+      "12100": {
+        "to_dist_ft": 3900,
+        "acc_stop_ft": 6600,
+        "acc_go_ft": 8000,
+        "se_climb_fpm": 600
+      }
+    },
+    "20": {
+      "10000": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 4650,
+        "acc_go_ft": 4800,
+        "se_climb_fpm": 925
+      },
+      "10500": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 5250,
+        "se_climb_fpm": 850
+      },
+      "11000": {
+        "to_dist_ft": 3600,
+        "acc_stop_ft": 4950,
+        "acc_go_ft": 5900,
+        "se_climb_fpm": 775
+      },
+      "11550": {
+        "to_dist_ft": 3800,
+        "acc_stop_ft": 5300,
+        "acc_go_ft": 7400,
+        "se_climb_fpm": 650
+      },
+      "11600": {
+        "to_dist_ft": 3850,
+        "acc_stop_ft": 5750,
+        "acc_go_ft": 7400,
+        "se_climb_fpm": 650
+      },
+      "12100": {
+        "to_dist_ft": 4200,
+        "acc_stop_ft": 6800,
+        "acc_go_ft": null,
+        "se_climb_fpm": 575
+      }
+    },
+    "30": {
+      "10000": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4750,
+        "acc_go_ft": 5000,
+        "se_climb_fpm": 850
+      },
+      "10500": {
+        "to_dist_ft": 3600,
+        "acc_stop_ft": 4950,
+        "acc_go_ft": 5500,
+        "se_climb_fpm": 750
+      },
+      "11000": {
+        "to_dist_ft": 3800,
+        "acc_stop_ft": 5150,
+        "acc_go_ft": 6300,
+        "se_climb_fpm": 675
+      },
+      "11550": {
+        "to_dist_ft": 4050,
+        "acc_stop_ft": 5550,
+        "acc_go_ft": 7750,
+        "se_climb_fpm": 600
+      },
+      "11600": {
+        "to_dist_ft": 4150,
+        "acc_stop_ft": 6050,
+        "acc_go_ft": 7950,
+        "se_climb_fpm": 600
+      },
+      "12100": {
+        "to_dist_ft": 4600,
+        "acc_stop_ft": 7150,
+        "acc_go_ft": null,
+        "se_climb_fpm": 550
+      }
+    },
+    "40": {
+      "10000": {
+        "to_dist_ft": 3950,
+        "acc_stop_ft": 5300,
+        "acc_go_ft": 6400,
+        "se_climb_fpm": 750
+      },
+      "10500": {
+        "to_dist_ft": 4200,
+        "acc_stop_ft": 5450,
+        "acc_go_ft": 7200,
+        "se_climb_fpm": 650
+      },
+      "11000": {
+        "to_dist_ft": 4450,
+        "acc_stop_ft": 5800,
+        "acc_go_ft": 8400,
+        "se_climb_fpm": 575
+      },
+      "11550": {
+        "to_dist_ft": 4700,
+        "acc_stop_ft": 6200,
+        "acc_go_ft": 10400,
+        "se_climb_fpm": 500
+      },
+      "11600": {
+        "to_dist_ft": 4800,
+        "acc_stop_ft": 6400,
+        "acc_go_ft": null,
+        "se_climb_fpm": 500
+      },
+      "12100": {
+        "to_dist_ft": 5400,
+        "acc_stop_ft": 7400,
+        "acc_go_ft": null,
+        "se_climb_fpm": 450
+      }
+    },
+    "-20": {
+      "10000": {
+        "to_dist_ft": 2500,
+        "acc_stop_ft": 4000,
+        "acc_go_ft": 3600,
+        "se_climb_fpm": 1025
+      },
+      "10500": {
+        "to_dist_ft": 2600,
+        "acc_stop_ft": 4100,
+        "acc_go_ft": 4400,
+        "se_climb_fpm": 975
+      },
+      "11000": {
+        "to_dist_ft": 2750,
+        "acc_stop_ft": 4150,
+        "acc_go_ft": 4500,
+        "se_climb_fpm": 875
+      },
+      "11550": {
+        "to_dist_ft": 2900,
+        "acc_stop_ft": 4450,
+        "acc_go_ft": 5100,
+        "se_climb_fpm": 750
+      },
+      "11600": {
+        "to_dist_ft": 2950,
+        "acc_stop_ft": 5250,
+        "acc_go_ft": 5100,
+        "se_climb_fpm": 750
+      },
+      "12100": {
+        "to_dist_ft": 3300,
+        "acc_stop_ft": 5950,
+        "acc_go_ft": 5900,
+        "se_climb_fpm": 675
+      }
+    }
+  },
+  "8000": {
+    "0": {
+      "10000": {
+        "to_dist_ft": 3650,
+        "acc_stop_ft": 5150,
+        "acc_go_ft": 5600,
+        "se_climb_fpm": 900
+      },
+      "10500": {
+        "to_dist_ft": 3900,
+        "acc_stop_ft": 5250,
+        "acc_go_ft": 6100,
+        "se_climb_fpm": 800
+      },
+      "11000": {
+        "to_dist_ft": 4150,
+        "acc_stop_ft": 5550,
+        "acc_go_ft": 7000,
+        "se_climb_fpm": 700
+      },
+      "11550": {
+        "to_dist_ft": 4400,
+        "acc_stop_ft": 5900,
+        "acc_go_ft": 8800,
+        "se_climb_fpm": 625
+      },
+      "11600": {
+        "to_dist_ft": 4450,
+        "acc_stop_ft": 6400,
+        "acc_go_ft": 8850,
+        "se_climb_fpm": 625
+      },
+      "12100": {
+        "to_dist_ft": 4900,
+        "acc_stop_ft": 7450,
+        "acc_go_ft": null,
+        "se_climb_fpm": 575
+      }
+    },
+    "10": {
+      "10000": {
+        "to_dist_ft": 3900,
+        "acc_stop_ft": 5400,
+        "acc_go_ft": 6000,
+        "se_climb_fpm": 850
+      },
+      "10500": {
+        "to_dist_ft": 4150,
+        "acc_stop_ft": 5550,
+        "acc_go_ft": 6600,
+        "se_climb_fpm": 750
+      },
+      "11000": {
+        "to_dist_ft": 4400,
+        "acc_stop_ft": 5800,
+        "acc_go_ft": 7800,
+        "se_climb_fpm": 675
+      },
+      "11550": {
+        "to_dist_ft": 4650,
+        "acc_stop_ft": 6250,
+        "acc_go_ft": 9900,
+        "se_climb_fpm": 600
+      },
+      "11600": {
+        "to_dist_ft": 4750,
+        "acc_stop_ft": 6650,
+        "acc_go_ft": 10300,
+        "se_climb_fpm": 600
+      },
+      "12100": {
+        "to_dist_ft": 5250,
+        "acc_stop_ft": 7750,
+        "acc_go_ft": null,
+        "se_climb_fpm": 550
+      }
+    },
+    "20": {
+      "10000": {
+        "to_dist_ft": 4100,
+        "acc_stop_ft": 5600,
+        "acc_go_ft": 6500,
+        "se_climb_fpm": 775
+      },
+      "10500": {
+        "to_dist_ft": 4350,
+        "acc_stop_ft": 5800,
+        "acc_go_ft": 7200,
+        "se_climb_fpm": 700
+      },
+      "11000": {
+        "to_dist_ft": 4650,
+        "acc_stop_ft": 6050,
+        "acc_go_ft": 8700,
+        "se_climb_fpm": 625
+      },
+      "11550": {
+        "to_dist_ft": 4950,
+        "acc_stop_ft": 6500,
+        "acc_go_ft": 10800,
+        "se_climb_fpm": 550
+      },
+      "11600": {
+        "to_dist_ft": 5150,
+        "acc_stop_ft": 6850,
+        "acc_go_ft": null,
+        "se_climb_fpm": 550
+      },
+      "12100": {
+        "to_dist_ft": 5800,
+        "acc_stop_ft": 8050,
+        "acc_go_ft": null,
+        "se_climb_fpm": 525
+      }
+    },
+    "30": {
+      "10000": {
+        "to_dist_ft": 4850,
+        "acc_stop_ft": 6100,
+        "acc_go_ft": 8800,
+        "se_climb_fpm": 650
+      },
+      "10500": {
+        "to_dist_ft": 5150,
+        "acc_stop_ft": 6300,
+        "acc_go_ft": 9900,
+        "se_climb_fpm": 550
+      },
+      "11000": {
+        "to_dist_ft": 5500,
+        "acc_stop_ft": 6650,
+        "acc_go_ft": 11600,
+        "se_climb_fpm": 475
+      },
+      "11550": {
+        "to_dist_ft": 5850,
+        "acc_stop_ft": 7200,
+        "acc_go_ft": null,
+        "se_climb_fpm": 400
+      },
+      "11600": {
+        "to_dist_ft": 5900,
+        "acc_stop_ft": 7300,
+        "acc_go_ft": null,
+        "se_climb_fpm": 400
+      },
+      "12100": {
+        "to_dist_ft": 6550,
+        "acc_stop_ft": 8400,
+        "acc_go_ft": null,
+        "se_climb_fpm": 375
+      }
+    },
+    "-10": {
+      "10000": {
+        "to_dist_ft": 3450,
+        "acc_stop_ft": 4900,
+        "acc_go_ft": 5250,
+        "se_climb_fpm": 925
+      },
+      "10500": {
+        "to_dist_ft": 3650,
+        "acc_stop_ft": 5000,
+        "acc_go_ft": 5750,
+        "se_climb_fpm": 825
+      },
+      "11000": {
+        "to_dist_ft": 3850,
+        "acc_stop_ft": 5250,
+        "acc_go_ft": 6250,
+        "se_climb_fpm": 725
+      },
+      "11550": {
+        "to_dist_ft": 4100,
+        "acc_stop_ft": 5600,
+        "acc_go_ft": 8000,
+        "se_climb_fpm": 650
+      },
+      "11600": {
+        "to_dist_ft": 4150,
+        "acc_stop_ft": 6200,
+        "acc_go_ft": 8050,
+        "se_climb_fpm": 650
+      },
+      "12100": {
+        "to_dist_ft": 4550,
+        "acc_stop_ft": 7150,
+        "acc_go_ft": 11800,
+        "se_climb_fpm": 600
+      }
+    },
+    "-20": {
+      "10000": {
+        "to_dist_ft": 3200,
+        "acc_stop_ft": 4700,
+        "acc_go_ft": 4900,
+        "se_climb_fpm": 950
+      },
+      "10500": {
+        "to_dist_ft": 3400,
+        "acc_stop_ft": 4800,
+        "acc_go_ft": 5600,
+        "se_climb_fpm": 850
+      },
+      "11000": {
+        "to_dist_ft": 3550,
+        "acc_stop_ft": 5000,
+        "acc_go_ft": 5700,
+        "se_climb_fpm": 750
+      },
+      "11550": {
+        "to_dist_ft": 3800,
+        "acc_stop_ft": 5350,
+        "acc_go_ft": 7300,
+        "se_climb_fpm": 675
+      },
+      "11600": {
+        "to_dist_ft": 3850,
+        "acc_stop_ft": 5850,
+        "acc_go_ft": 7300,
+        "se_climb_fpm": 675
+      },
+      "12100": {
+        "to_dist_ft": 4200,
+        "acc_stop_ft": 6850,
+        "acc_go_ft": 9400,
+        "se_climb_fpm": 600
+      }
+    }
+  }
+};
+    const VRV50 = [{ "mass_text": "> 10810", "min_lb": 10811, "max_lb": null, "vr": 103, "v50": 120 }, { "mass_text": "10811 - 11550", "min_lb": 10811, "max_lb": 11550, "vr": 106, "v50": 120 }, { "mass_text": "11551 - 11699", "min_lb": 11551, "max_lb": 11699, "vr": 112, "v50": 122 }, { "mass_text": "11700 11899", "min_lb": 11700, "max_lb": 11899, "vr": 114, "v50": 123 }, { "mass_text": "11900 12099", "min_lb": 11900, "max_lb": 12099, "vr": 117, "v50": 125 }, { "mass_text": "12100", "min_lb": 12100, "max_lb": 12100, "vr": 120, "v50": 126 }];
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
