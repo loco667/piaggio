@@ -157,6 +157,7 @@
       </div>
     </section>
 
+    <!-- TAKEOFF PERFORMANCE (unchanged) -->
     <section class="panel stack">
       <div class="results">
         <div class="card">
@@ -175,20 +176,21 @@
           <div class="label">SE climb rate</div>
           <div class="value" id="out-seclimb">—</div>
         </div>
+        <div class="card">
+          <div class="label">Vr (KIAS)</div>
+          <div class="value" id="out-vr">—</div>
+        </div>
+        <div class="card">
+          <div class="label">V50 (KIAS)</div>
+          <div class="value" id="out-v50">—</div>
+        </div>
       </div>
-     
-    </section>
-
-    <section class="panel footer">
-      <h3>Vr and V50</h3>
-      <table id="vrv50-table">
-        <thead><tr><th>Mass (lb)</th><th>Vr (KIAS)</th><th>V50 (KIAS)</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      
     </section>
   </main>
 
 <script>
+  // --- PERFORMANCE DATA (unchanged) ---
   const DATA = {
   "0": {
     "0": {
@@ -1149,7 +1151,17 @@
     }
   }
 };
-    const VRV50 = [{ "mass_text": "> 10810", "min_lb": 10811, "max_lb": null, "vr": 103, "v50": 120 }, { "mass_text": "10811 - 11550", "min_lb": 10811, "max_lb": 11550, "vr": 106, "v50": 120 }, { "mass_text": "11551 - 11699", "min_lb": 11551, "max_lb": 11699, "vr": 112, "v50": 122 }, { "mass_text": "11700 11899", "min_lb": 11700, "max_lb": 11899, "vr": 114, "v50": 123 }, { "mass_text": "11900 12099", "min_lb": 11900, "max_lb": 12099, "vr": 117, "v50": 125 }, { "mass_text": "12100", "min_lb": 12100, "max_lb": 12100, "vr": 120, "v50": 126 }];
+  // --- END PERFORMANCE DATA ---
+
+  // Vr / V50 reference table converted to ranges and used for lookup
+  const VRV50 = [
+    { range: "≤ 10,810", min_lb: null, max_lb: 10810, vr: 103, v50: 120 },
+    { range: "10,811 – 11,550", min_lb: 10811, max_lb: 11550, vr: 106, v50: 120 },
+    { range: "11,551 – 11,699", min_lb: 11551, max_lb: 11699, vr: 112, v50: 122 },
+    { range: "11,700 – 11,899", min_lb: 11700, max_lb: 11899, vr: 114, v50: 123 },
+    { range: "11,900 – 12,099", min_lb: 11900, max_lb: 12099, vr: 117, v50: 125 },
+    { range: "12,100",          min_lb: 12100, max_lb: 12100, vr: 120, v50: 126 }
+  ];
 
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -1171,7 +1183,7 @@
     const el = document.getElementById(containerId);
     el.innerHTML = "";
     options.forEach((opt, idx) => {
-      const id = `${name}-${opt}`.replace(/[^a-z0-9\\-]/gi, "_");
+      const id = `${name}-${opt}`.replace(/[^a-z0-9\-]/gi, "_");
       const label = document.createElement("label");
       label.className = "radio";
       const input = document.createElement("input");
@@ -1215,6 +1227,7 @@
     return el ? (isNaN(+el.value) ? el.value : +el.value) : null;
   }
 
+  // --- TAKEOFF PERFORMANCE: recompute() left untouched ---
   function recompute() {
     const alt = getSelected("alt");
     const temp = getSelected("temp");
@@ -1234,6 +1247,42 @@
     $("#out-seclimb").textContent = fmtFpm(out.se_climb_fpm);
   }
 
+  // --- Vr / V50 helpers ---
+  function lookupVrV50(weight) {
+    if (weight == null) return null;
+    for (const row of VRV50) {
+      const minOk = (row.min_lb == null) ? true : (weight >= row.min_lb);
+      const maxOk = (row.max_lb == null) ? true : (weight <= row.max_lb);
+      if (minOk && maxOk) return row;
+    }
+    return null;
+  }
+
+  function updateVrV50() {
+    const weight = getSelected("weight");
+    const outVr = $("#out-vr");
+    const outV50 = $("#out-v50");
+    const note = $("#vrv50-note");
+
+    if (weight == null) {
+      outVr.textContent = "—";
+      outV50.textContent = "—";
+      note.textContent = "Select a weight to see Vr and V50.";
+      return;
+    }
+
+    const match = lookupVrV50(weight);
+    if (match) {
+      outVr.textContent = match.vr;
+      outV50.textContent = match.v50;
+      note.textContent = `Applicable range: ${match.range} lb`;
+    } else {
+      outVr.textContent = "N/A";
+      outV50.textContent = "N/A";
+      note.textContent = "No Vr/V50 defined for this weight.";
+    }
+  }
+
   function renderAll() {
     const altOptions = Object.keys(DATA).map(Number).sort((a,b) => a-b);
     renderRadioGroup("alt-group", "alt", altOptions, v => (v===0 ? "Sea Level (0 ft)" : `${v.toLocaleString()} ft`), (alt) => {
@@ -1249,25 +1298,10 @@
     renderRadioGroup("temp-group", "temp", temps, v => `${v} °C`, () => { recompute(); }, defaultTemp);
 
     const wts = availableWeights();
-    renderRadioGroup("weight-group", "weight", wts, v => `${v.toLocaleString()} lb`, () => { recompute(); });
+    renderRadioGroup("weight-group", "weight", wts, v => `${v.toLocaleString()} lb`, () => { recompute(); updateVrV50(); });
 
     recompute();
-
-    const tbody = document.querySelector("#vrv50-table tbody");
-    tbody.innerHTML = "";
-    VRV50.forEach(row => {
-      const tr = document.createElement("tr");
-      const tdMass = document.createElement("td");
-      tdMass.textContent = row.mass_text;
-      const tdVr = document.createElement("td");
-      tdVr.textContent = (row.vr ?? "—");
-      const tdV50 = document.createElement("td");
-      tdV50.textContent = (row.v50 ?? "—");
-      tr.appendChild(tdMass);
-      tr.appendChild(tdVr);
-      tr.appendChild(tdV50);
-      tbody.appendChild(tr);
-    });
+    updateVrV50();
   }
 
   document.addEventListener("DOMContentLoaded", renderAll);
