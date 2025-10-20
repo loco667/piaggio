@@ -138,7 +138,7 @@
 <body>
   <header>
     <h1>Piaggio Avanti II EVO Takeoff Performance Calculator</h1>
-    <p class="subtitle">Based on the training-ony checklist, which was based on AFM version A7. Release 1.0 Mar 2017</p>
+    <p class="subtitle">Not for operational use. Consult your AFM.</p>
   </header>
 
   <main class="container">
@@ -172,10 +172,9 @@
           <div class="label">Accelerate / Go distance over 50ft</div>
           <div class="value" id="out-accgo">—</div>
         </div>
-        <div class="card">
-          <div class="label">SE climb rate</div>
-          <div class="value" id="out-seclimb">—</div>
         </div>
+        <div class="results">
+        
         <div class="card">
           <div class="label">Vr (KIAS)</div>
           <div class="value" id="out-vr">—</div>
@@ -183,6 +182,16 @@
         <div class="card">
           <div class="label">V50 (KIAS)</div>
           <div class="value" id="out-v50">—</div>
+        </div>
+      </div>
+      <div class="results">
+        <div class="card">
+          <div class="label">SE climb rate</div>
+          <div class="value" id="out-seclimb">—</div>
+        </div>
+        <div class="card">
+          <div class="label">SE gradient at 140 KIAS</div>
+          <div class="value" id="out-segradient">—</div>
         </div>
       </div>
       
@@ -1178,7 +1187,16 @@
     if (v === null || v === undefined) return "N/A";
     return `${fmtInt(v)} fpm`;
   }
+  function fmtGradient(fpm, alt) {
+    if (fpm === null || fpm === undefined || alt === null || alt === undefined) return "N/A";
 
+    tas=140 * (1 + (alt/1000) * .02);
+    
+    
+    gradient=(fpm/(tas * (6076.1155 / 60))) * 100;
+
+    return `${fmtInt(Math.floor(gradient * 10) / 10)} %`;
+  }
   function renderRadioGroup(containerId, name, options, format, onChange, initialValue) {
     const el = document.getElementById(containerId);
     el.innerHTML = "";
@@ -1245,6 +1263,7 @@
     $("#out-accstop").textContent = fmtDistance(out.acc_stop_ft);
     $("#out-accgo").textContent = fmtDistance(out.acc_go_ft);
     $("#out-seclimb").textContent = fmtFpm(out.se_climb_fpm);
+    $("#out-segradient").textContent = fmtGradient(out.se_climb_fpm, alt);
   }
 
   // --- Vr / V50 helpers ---
@@ -1275,7 +1294,7 @@
     if (match) {
       outVr.textContent = match.vr;
       outV50.textContent = match.v50;
-      note.textContent = `Applicable range: ${match.range} lb`;
+      //note.textContent = `Applicable range: ${match.range} lb`;
     } else {
       outVr.textContent = "N/A";
       outV50.textContent = "N/A";
